@@ -84,9 +84,9 @@ func encodeFiles(files []string, dir string) (map[string][]byte, error) {
 		key := "/" + strings.TrimPrefix(strings.TrimPrefix(path, dir), "/")
 		m[key] = data
 		total += int64(len(data))
-		fmt.Printf("API: [%s] len=%d\n", key, len(data))
+		fmt.Printf("[%s] len=%d\n", key, len(data))
 	}
-	fmt.Printf("files: %d, size: %d Bytes", len(files), total)
+	fmt.Printf("processed: files: %d, size: %d Bytes", len(files), total)
 	return m, nil
 }
 

@@ -14,7 +14,7 @@ const (
 
 var (
 	fs     = pflag.NewFlagSet("EggCrate", pflag.ContinueOnError)
-	dir    = fs.StringP("src", "d", "", "Source directory")
+	dir    = fs.StringP("dir", "d", "", "Source directory")
 	ext    = fs.StringP("ext", "e", "js,png,css,eot,svg,ttf,woff,woff2,js,html", "Comma separated extensions(ex: jpg,htm,...")
 	output = fs.StringP("output", "o", "asset.go", "Output file")
 
