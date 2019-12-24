@@ -1,4 +1,7 @@
-# eggcrate
+# Eggcrate
+
+[![Build Status](https://travis-ci.org/devplayg/eggcrate.svg?branch=master)](https://travis-ci.org/devplayg/eggcrate)
+
 EggCrate embeds static files into Go source encoded base64
 
 Encode
