@@ -16,7 +16,7 @@ func TestEncodeContentToBase64(t *testing.T) {
 	extCss := ".css"
 	assetFile := "asset.go"
 
-	dir, err := ioutil.TempDir("c:/temp", "eggcrate-encode")
+	dir, err := ioutil.TempDir("", "eggcrate-encode")
 	assert.Nil(err)
 	defer func() {
 		//os.RemoveAll(dir)
