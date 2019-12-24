@@ -10,7 +10,6 @@ import (
 )
 
 func TestEncodeContentToBase64(t *testing.T) {
-
 	assert := assert.New(t)
 	extJs := ".js"
 	extCss := ".css"
