@@ -10,6 +10,13 @@ Encode
 _, err := Encode("/data", "js,css,png", "asset.go")
 ```
 
+Decode
+
+```
+var fileMap map[string][]byte
+fileMap, _ := Decode("H4sIAAAAAAAA/6p...")
+```
+
 Directory structure
 
 ```
@@ -23,14 +30,7 @@ Directory structure
                custom.js
 ```
 
-
-Decode
-
-```
-fileMap, err := Decode("H4sIAAAAAAAA/6p...")
-```
-
-fileMap: map[string][]byte
+Map structure
 
 |Key (string)|Value ([]byte)|
 |---|---|
