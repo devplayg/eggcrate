@@ -39,10 +39,12 @@ func main() {
 		return
 	}
 
-	if _, err := eggcrate.Encode(*dir, *extensions, *output); err != nil {
+	str, err := eggcrate.Encode(*dir, *extensions, *output)
+	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	fmt.Printf("encoded length: %d\n", len(*str))
 }
 
 func CheckDir(path string) error {
