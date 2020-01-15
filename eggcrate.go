@@ -2,12 +2,13 @@ package eggcrate
 
 import (
 	"bytes"
-	"compress/gzip"
 	"encoding/base64"
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"io"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/devplayg/golibs/compress"
+	"github.com/devplayg/golibs/converter"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -15,31 +16,54 @@ import (
 	"strings"
 )
 
-func createExtensionMap(str string) (map[string]bool, error) {
-	m := make(map[string]bool)
-	extensions := strings.Split(str, ",")
-	if len(extensions) < 1 {
-		return nil, errors.New("extensions required")
+func Encode(config *Config) (int, error) {
+	return encode(config.Dir, config.Extensions, config.UriPrefix, true, config.OutFile)
+}
+
+func encode(dir, extensions, uriPrefix string, compress bool, outFile string) (int, error) {
+	dir = filepath.ToSlash(dir)
+	if err := mustBeDirectory(dir); err != nil {
+		return 0, err
+	}
+	if len(outFile) < 1 {
+		return 0, errors.New("invalid output file")
 	}
 
-	for _, e := range extensions {
-		ext := strings.TrimSpace(e)
-		ext = strings.TrimPrefix(ext, ".")
-		m["."+ext] = true
+	extensionMap := createExtensionMap(extensions)
+	spew.Dump(extensionMap)
+
+	files, err := getFilesWithExtensions(dir, extensionMap)
+	spew.Dump(files)
+	if err != nil {
+		return 0, fmt.Errorf("fail to get files with extensions(%v): %w ", extensions, err)
+	}
+	if len(files) < 1 {
+		return 0, nil
 	}
 
-	return m, nil
+	fileMap, err := generateFileMap(files, dir, uriPrefix, compress)
+	if err != nil {
+		return 0, err
+	}
+
+	encoded, err := converter.EncodeToBytes(fileMap)
+	if err != nil {
+		return 0, err
+	}
+
+	base64Encoded := base64.StdEncoding.EncodeToString(encoded)
+	if err = writeData(base64Encoded, fileMap, outFile); err != nil {
+		return 0, err
+	}
+	fmt.Printf("outFile=%s\n", outFile)
+
+	return len(encoded), nil
 }
 
 func Decode(encoded string) (map[string][]byte, error) {
 	var fileMap map[string][]byte
 
-	compressed, err := base64.StdEncoding.DecodeString(encoded)
-	if err != nil {
-		return nil, err
-	}
-
-	decoded, err := decompress(compressed)
+	decoded, err := base64.StdEncoding.DecodeString(encoded)
 	if err != nil {
 		return nil, err
 	}
@@ -48,63 +72,33 @@ func Decode(encoded string) (map[string][]byte, error) {
 	return fileMap, dec.Decode(&fileMap)
 }
 
-func Encode(dir string, extensions string, outFile string) (*string, error) {
-	dir = filepath.ToSlash(dir)
-	extensionMap, err := createExtensionMap(extensions)
-	if err != nil {
-		return nil, err
-	}
-
-	files, err := getFilesWithExtensions(filepath.ToSlash(dir), extensionMap)
-	if err != nil {
-		return nil, err
-	}
-	if len(files) < 1 {
-		return nil, errors.New("no files")
-	}
-
-	fileMap, err := generateFileMap(files, dir)
-	if err != nil {
-		return nil, err
-	}
-	encoded, _ := encodeToBytes(fileMap)
-
-	compressed, err := compress(encoded)
-	if err != nil {
-		return nil, err
-	}
-
-	base64Encoded := base64.StdEncoding.EncodeToString(compressed)
-	if err = writeData(base64Encoded, fileMap, outFile); err != nil {
-		return nil, err
-	}
-
-	return &base64Encoded, nil
-}
-
-func encodeToBytes(p interface{}) ([]byte, error) {
-	buf := bytes.Buffer{}
-	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(p); err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-
-func generateFileMap(files []string, dir string) (map[string][]byte, error) {
+func generateFileMap(files []string, dir, uriPrefix string, doCompress bool) (map[string][]byte, error) {
 	m := make(map[string][]byte)
-	var total int64
+	var totalOrigin int64
+	var totalCompressed int64
+
 	for _, path := range files {
 		data, err := ioutil.ReadFile(path)
 		if err != nil {
 			return nil, err
 		}
-		key := "/" + strings.TrimPrefix(strings.TrimPrefix(path, dir), "/")
+		key := uriPrefix + "/" + strings.TrimPrefix(strings.TrimPrefix(path, dir), "/")
+		totalOrigin += int64(len(data))
+
+		if doCompress {
+			compressed, err := compress.Compress(data, compress.GZIP)
+			if err != nil {
+				return nil, err
+			}
+			m[key] = compressed
+			totalCompressed += int64(len(compressed))
+			fmt.Printf("%s compressed (len=%d->%d)\n", key, len(data), len(compressed))
+			continue
+		}
 		m[key] = data
-		total += int64(len(data))
-		fmt.Printf("[%s] len=%d\n", key, len(data))
+		fmt.Printf("%s len=%d\n", key, len(data))
 	}
-	fmt.Printf("processed: files: %d, size: %d Bytes\n", len(files), total)
+	fmt.Printf("encoded: files=%d, size=(%d->%d) Bytes(%2.1f%%)\n", len(files), totalOrigin, totalCompressed, float32(totalCompressed)/float32(totalOrigin)*100)
 	return m, nil
 }
 
@@ -126,42 +120,10 @@ func writeData(encoded string, fileMap map[string][]byte, output string) error {
 	fmt.Fprintf(&qb, `
 package %s
 
-var assetData = "`, "server")
+var assetData = "`, "main")
 	qb.WriteString(encoded)
 	fmt.Fprint(&qb, `"`)
 	return ioutil.WriteFile(output, qb.Bytes(), 0644)
-}
-
-func compress(data []byte) ([]byte, error) {
-	var b bytes.Buffer
-	gz := gzip.NewWriter(&b)
-	if _, err := gz.Write(data); err != nil {
-		return nil, err
-	}
-	if err := gz.Close(); err != nil {
-		return nil, err
-	}
-	return b.Bytes(), nil
-}
-
-func decompress(b []byte) ([]byte, error) {
-	buf := bytes.NewBuffer(b)
-
-	var r io.Reader
-	var err error
-	r, err = gzip.NewReader(buf)
-	if err != nil {
-		return nil, err
-	}
-
-	var resB bytes.Buffer
-	_, err = resB.ReadFrom(r)
-	if err != nil {
-		return nil, err
-	}
-
-	return resB.Bytes(), nil
-
 }
 
 func getFilesWithExtensions(dir string, extMap map[string]bool) ([]string, error) {
@@ -173,12 +135,47 @@ func getFilesWithExtensions(dir string, extMap map[string]bool) ([]string, error
 		if f.IsDir() {
 			return nil
 		}
-		if _, have := extMap[filepath.Ext(path)]; !have {
+		if extMap == nil {
+			list = append(list, filepath.ToSlash(path))
 			return nil
 		}
-
+		if _, have := extMap[strings.ToLower(filepath.Ext(path))]; !have {
+			return nil
+		}
 		list = append(list, filepath.ToSlash(path))
 		return nil
+
 	})
 	return list, err
+}
+
+func createExtensionMap(str string) map[string]bool {
+	if len(str) < 1 {
+		return nil
+	}
+
+	m := make(map[string]bool)
+	extensions := strings.Split(str, ",")
+	if len(extensions) < 1 {
+		return nil
+	}
+
+	for _, e := range extensions {
+		ext := strings.TrimSpace(e)
+		ext = strings.ToLower(strings.TrimPrefix(ext, "."))
+		m["."+ext] = true
+	}
+
+	return m
+}
+
+func mustBeDirectory(dir string) error {
+	f, err := os.Stat(dir)
+	if err != nil {
+		return err
+	}
+	if !f.IsDir() {
+		return fmt.Errorf("%v is not a directory", dir)
+	}
+	return nil
 }
