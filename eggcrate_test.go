@@ -1,11 +1,11 @@
 package eggcrate
 
 import (
+	"github.com/devplayg/golibs/compress"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -18,7 +18,7 @@ func TestEncodeContentToBase64(t *testing.T) {
 	dir, err := ioutil.TempDir("", "eggcrate-encode")
 	assert.Nil(err)
 	defer func() {
-		//os.RemoveAll(dir)
+		os.RemoveAll(dir)
 	}()
 	dir = filepath.ToSlash(dir)
 
@@ -30,7 +30,7 @@ func TestEncodeContentToBase64(t *testing.T) {
 	assert.Nil(jsFile.Close())
 	assert.Nil(os.Rename(jsFile.Name(), filepath.Join(dir, filepath.Base(jsFile.Name())+extJs)))
 	defer func() {
-		//assert.Nil(os.Remove(jsFile.Name()+extJs))
+		assert.Nil(os.Remove(jsFile.Name() + extJs))
 	}()
 
 	cssFile, err := ioutil.TempFile(dir, "eggcrate-encode")
@@ -44,26 +44,27 @@ func TestEncodeContentToBase64(t *testing.T) {
 		//assert.Nil(os.Remove(jsFile.Name()+extCss))
 	}()
 
-	str, err := Encode(dir, "js,css", filepath.Join(dir, assetFile))
+	config := Config{
+		Dir:        dir,
+		OutFile:    filepath.Join(dir, assetFile),
+		UriPrefix:  "",
+		Extensions: "js,css",
+	}
+	_, err = Encode(&config)
 	assert.Nil(err)
 
-	fileMap, err := Decode(*str)
+	fileMap, err := Decode(`Dv+BBAEC/4IAAQwBCgAA/5T/ggACHS9lZ2djcmF0ZS1lbmNvZGU0ODA0MzU1NDAuY3NzLB+LCAAAAAAAAP9Kyk
++pVKhWSM7PyS+yUihKTbFWqAUEAAD//4Gv1I8UAAAAHC9lZ2djcmF0ZS1lbmNvZGU4MDg1ODQwNzMuanMnH4sIAAAAAAAA/0rMSS0q0VDPSM3JyVfXtAYEAAD//y80DPcPAAAA`)
 	assert.Nil(err)
-
-	key := strings.TrimPrefix(filepath.ToSlash(jsFile.Name())+extJs, dir)
-	jsVal, exists := fileMap[key]
+	key := "/eggcrate-encode480435540.css"
+	found, exists := fileMap[key]
 	if !exists {
-		assert.Fail("xxx")
-
+		assert.Fail("key does not exists; " + key)
 	}
-	assert.Equal([]byte(jsText), jsVal)
 
-	key = strings.TrimPrefix(filepath.ToSlash(cssFile.Name())+extCss, dir)
-	jsCss, exists := fileMap[key]
-	if !exists {
-		assert.Fail("xxx")
-
+	expected, err := compress.Compress([]byte(cssText), compress.GZIP)
+	if err != nil {
+		assert.Fail("compress error")
 	}
-	assert.Equal([]byte(cssText), jsCss)
-
+	assert.Equal(found, expected)
 }

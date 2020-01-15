@@ -30,11 +30,11 @@ func encode(dir, extensions, uriPrefix string, compress bool, outFile string) (i
 	}
 
 	extensionMap := createExtensionMap(extensions)
-	spew.Dump(extensionMap)
 
 	files, err := getFilesWithExtensions(dir, extensionMap)
-	spew.Dump(files)
 	if err != nil {
+		//return 0, fmt.Errorf("fail to get files with extensions(%v): %w ", extensions, err)
+		spew.Dump(err)
 		return 0, fmt.Errorf("fail to get files with extensions(%v): %w ", extensions, err)
 	}
 	if len(files) < 1 {
@@ -67,7 +67,6 @@ func Decode(encoded string) (map[string][]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	dec := gob.NewDecoder(bytes.NewReader(decoded))
 	return fileMap, dec.Decode(&fileMap)
 }
