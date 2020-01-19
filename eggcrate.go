@@ -61,6 +61,7 @@ func encode(dir, extensions, uriPrefix string, compress bool, outFile string) (i
 }
 
 func Decode(encoded string) (map[string][]byte, error) {
+	encoded = strings.ReplaceAll(encoded, "\n", "")
 	var fileMap map[string][]byte
 
 	decoded, err := base64.StdEncoding.DecodeString(encoded)
@@ -115,13 +116,25 @@ func writeData(encoded string, fileMap map[string][]byte, output string) error {
 		fmt.Fprintf(&qb, "\t%s\n", k)
 	}
 	fmt.Fprintf(&qb, "*/\n\n")
+	fmt.Fprintf(&qb, "package %s\n\nvar assetData=`", "main")
 
-	fmt.Fprintf(&qb, `
-package %s
+	// qb.WriteString(encoded)
+	size := len(encoded)
+	n := 100
+	for i := 0; i < size; i += n {
+		end := i + n
+		if end > size {
+			end = size
+			// fmt.Printf("%d-%d\n", i, end)
+			qb.WriteString(encoded[i:end])
+			break
+		}
+		// fmt.Printf("%d-%d\n", i, end)
+		qb.WriteString(encoded[i:end] + "\n")
 
-var assetData = "`, "main")
-	qb.WriteString(encoded)
-	fmt.Fprint(&qb, `"`)
+	}
+
+	fmt.Fprint(&qb, "`")
 	return ioutil.WriteFile(output, qb.Bytes(), 0644)
 }
 
