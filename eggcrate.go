@@ -6,7 +6,6 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/devplayg/golibs/compress"
 	"github.com/devplayg/golibs/converter"
 	"io/ioutil"
@@ -34,7 +33,6 @@ func encode(dir, extensions, uriPrefix string, compress bool, outFile string) (i
 	files, err := getFilesWithExtensions(dir, extensionMap)
 	if err != nil {
 		//return 0, fmt.Errorf("fail to get files with extensions(%v): %w ", extensions, err)
-		spew.Dump(err)
 		return 0, fmt.Errorf("fail to get files with extensions(%v): %w ", extensions, err)
 	}
 	if len(files) < 1 {
