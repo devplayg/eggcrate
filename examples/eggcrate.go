@@ -37,7 +37,7 @@ func main() {
 
 func encode() {
     config := eggcrate.Config{
-        Dir:        "E:/gohome/assets",
+        Dir:        "/gohome/assets",
         OutFile:    "data.go",
         UriPrefix:  "/assets",
         Extensions: "js,png,css,eot,svg,ttf,woff,woff2,js,html", //
