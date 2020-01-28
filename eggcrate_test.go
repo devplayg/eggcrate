@@ -1,70 +1,96 @@
 package eggcrate
 
 import (
-	"github.com/devplayg/golibs/compress"
-	"github.com/stretchr/testify/assert"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"testing"
+    "bytes"
+    "github.com/devplayg/golibs/compress"
+    "io/ioutil"
+    "os"
+    "path/filepath"
+    "testing"
 )
 
 func TestEncodeContentToBase64(t *testing.T) {
-	assert := assert.New(t)
-	extJs := ".js"
-	extCss := ".css"
-	assetFile := "asset.go"
+    extJs := ".js"
+    extCss := ".css"
+    assetFile := "asset.go"
 
-	dir, err := ioutil.TempDir("", "eggcrate-encode")
-	assert.Nil(err)
-	defer func() {
-		os.RemoveAll(dir)
-	}()
-	dir = filepath.ToSlash(dir)
+    dir, err := ioutil.TempDir("", "eggcrate-encode")
+    if err != nil {
+        t.Error(err)
+    }
+    defer func() {
+        os.RemoveAll(dir)
+    }()
+    dir = filepath.ToSlash(dir)
 
-	jsFile, err := ioutil.TempFile(dir, "eggcrate-encode")
-	assert.Nil(err)
-	jsText := "alert('hello');"
-	_, err = jsFile.WriteString(jsText)
-	assert.Nil(err)
-	assert.Nil(jsFile.Close())
-	assert.Nil(os.Rename(jsFile.Name(), filepath.Join(dir, filepath.Base(jsFile.Name())+extJs)))
-	defer func() {
-		assert.Nil(os.Remove(jsFile.Name() + extJs))
-	}()
+    jsFile, err := ioutil.TempFile(dir, "eggcrate-encode")
+    if err != nil {
+        t.Error(err)
+    }
+    jsText := "alert('hello');"
+    _, err = jsFile.WriteString(jsText)
+    if err != nil {
+        t.Error(err)
+    }
+    if err := jsFile.Close(); err != nil {
+        t.Error(err)
+    }
+    if err := os.Rename(jsFile.Name(), filepath.Join(dir, filepath.Base(jsFile.Name())+extJs)); err != nil {
+        t.Error(err)
+    }
+    defer func() {
+        if err := os.Remove(filepath.Join(dir, filepath.Base(jsFile.Name())+extJs)); err != nil {
+           t.Error(err)
+        }
+    }()
 
-	cssFile, err := ioutil.TempFile(dir, "eggcrate-encode")
-	assert.Nil(err)
-	cssText := "body { color: red; }"
-	_, err = cssFile.WriteString(cssText)
-	assert.Nil(err)
-	assert.Nil(cssFile.Close())
-	assert.Nil(os.Rename(cssFile.Name(), filepath.Join(dir, filepath.Base(cssFile.Name())+extCss)))
-	defer func() {
-		//assert.Nil(os.Remove(jsFile.Name()+extCss))
-	}()
+    cssFile, err := ioutil.TempFile(dir, "eggcrate-encode")
+    if err != nil {
+        t.Error(err)
+    }
+    cssText := "body { color: red; }"
+    _, err = cssFile.WriteString(cssText)
+    if err != nil {
+        t.Error(err)
+    }
+    if err := cssFile.Close(); err != nil {
+        t.Error(err)
+    }
+    if err := os.Rename(cssFile.Name(), filepath.Join(dir, filepath.Base(cssFile.Name())+extCss)); err != nil {
+        t.Error(err)
+    }
+    defer func() {
+        if err := os.Remove(filepath.Join(dir, filepath.Base(cssFile.Name())+extCss)); err != nil {
+           t.Error(err)
+        }
+    }()
 
-	config := Config{
-		Dir:        dir,
-		OutFile:    filepath.Join(dir, assetFile),
-		UriPrefix:  "",
-		Extensions: "js,css",
-	}
-	_, err = Encode(&config)
-	assert.Nil(err)
+    config := Config{
+        Dir:        dir,
+        OutFile:    filepath.Join(dir, assetFile),
+        UriPrefix:  "",
+        Extensions: "js,css",
+    }
+    if _, err = Encode(&config); err != nil {
+        t.Error(err)
+    }
 
-	fileMap, err := Decode(`Dv+BBAEC/4IAAQwBCgAA/5T/ggACHS9lZ2djcmF0ZS1lbmNvZGU0ODA0MzU1NDAuY3NzLB+LCAAAAAAAAP9Kyk
+    fileMap, err := Decode(`Dv+BBAEC/4IAAQwBCgAA/5T/ggACHS9lZ2djcmF0ZS1lbmNvZGU0ODA0MzU1NDAuY3NzLB+LCAAAAAAAAP9Kyk
 +pVKhWSM7PyS+yUihKTbFWqAUEAAD//4Gv1I8UAAAAHC9lZ2djcmF0ZS1lbmNvZGU4MDg1ODQwNzMuanMnH4sIAAAAAAAA/0rMSS0q0VDPSM3JyVfXtAYEAAD//y80DPcPAAAA`)
-	assert.Nil(err)
-	key := "/eggcrate-encode480435540.css"
-	found, exists := fileMap[key]
-	if !exists {
-		assert.Fail("key does not exists; " + key)
-	}
+    if err != nil {
+        t.Error(err)
+    }
+    key := "/eggcrate-encode480435540.css"
+    found, exists := fileMap[key]
+    if !exists {
+        t.Error("key does not exists; " + key)
+    }
 
-	expected, err := compress.Compress([]byte(cssText), compress.GZIP)
-	if err != nil {
-		assert.Fail("compress error")
-	}
-	assert.Equal(found, expected)
+    expected, err := compress.Compress([]byte(cssText), compress.GZIP)
+    if err != nil {
+        t.Error("compress error")
+    }
+    if !bytes.Equal(found, expected) {
+        t.Error("not same")
+    }
 }
