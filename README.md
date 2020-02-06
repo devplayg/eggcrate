@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/devplayg/eggcrate.svg?branch=master)](https://travis-ci.org/devplayg/eggcrate)
 
-`eggCrate` compresses Static files and encodes them in Base64 and saves them as Go source files.
+The `eggCrate` compresses static files and encodes them in Base64 and saves them as Go source files.
 
 ## Encode
 
@@ -18,7 +18,7 @@ Static files in the directory
         `-- app.js
 ```
 
-Encoding
+### Encoding
 
 ```go
 config := eggcrate.Config{
@@ -65,12 +65,14 @@ var assetData=`Dv+BBAEC/...
 
 ## Decoding
 
+Basic decoding
+
 ```
 var fileMap map[string][]byte
 fileMap, _ = eggcrate.Decode(assetData) 
 ```
 
-with http/net
+Decoding and using with http/net
 
 ```go
 package main
@@ -114,5 +116,10 @@ func cssHandler(w http.ResponseWriter, r *http.Request) {
 
 ## examples
 
-https://github.com/devplayg/eggcrate/blob/master/examples/encode/encode.go
-https://github.com/devplayg/eggcrate/blob/master/examples/decode/decode.go
+encoding
+
+- https://github.com/devplayg/eggcrate/blob/master/examples/encode/encode.go
+
+decoding
+
+- https://github.com/devplayg/eggcrate/blob/master/examples/decode/decode.go
