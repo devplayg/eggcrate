@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/devplayg/eggcrate.svg?branch=master)](https://travis-ci.org/devplayg/eggcrate)
 
-The `eggCrate` compresses static files and encodes them in Base64 and saves them as Go source files.
+The `eggcrate` compresses static files and encodes them in Base64 and saves them as Go source files.
 
 ## Encode
 
@@ -31,20 +31,6 @@ _, err := eggcrate.Encode(&config)
 if err != nil {
     fmt.Printf(err.Error())
 }
-```
-
-console output
-
-```
-/tmp/static/css/app.css compressed (len=104208->20571)
-/tmp/static/css/fa.css compressed (len=595->267)
-/tmp/static/js/app.js compressed (len=47710->13876)
-encoded: files=3, uriPrefix=/assets, size=(152513->34714) Bytes(22.8%)
-
-map is generated
-map[/assets/css/app.css][]byte("...")
-map[/assets/css/fa.css][]byte("...")
-map[/assets/js/app.js][]byte("...")
 ```
 
 output.go
