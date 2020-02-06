@@ -53,7 +53,6 @@ func encode(dir, extensions, uriPrefix string, compress bool, outFile string) (i
 	if err = writeData(base64Encoded, fileMap, outFile); err != nil {
 		return 0, err
 	}
-	fmt.Printf("outFile=%s\n", outFile)
 
 	return len(encoded), nil
 }
@@ -90,13 +89,20 @@ func generateFileMap(files []string, dir, uriPrefix string, doCompress bool) (ma
 			}
 			m[key] = compressed
 			totalCompressed += int64(len(compressed))
-			fmt.Printf("%s compressed (len=%d->%d)\n", key, len(data), len(compressed))
+			fmt.Printf("%s compressed (len=%d->%d)\n", path, len(data), len(compressed))
 			continue
 		}
 		m[key] = data
 		fmt.Printf("%s len=%d\n", key, len(data))
 	}
-	fmt.Printf("encoded: files=%d, size=(%d->%d) Bytes(%2.1f%%)\n", len(files), totalOrigin, totalCompressed, float32(totalCompressed)/float32(totalOrigin)*100)
+	fmt.Printf("encoded: files=%d, uriPrefix=%s, size=(%d->%d) Bytes(%2.1f%%)\n", len(files), uriPrefix, totalOrigin, totalCompressed, float32(totalCompressed)/float32(totalOrigin)*100)
+
+	fmt.Println()
+	fmt.Println("map is generated")
+	for k, _ := range m {
+		fmt.Printf("map[%s][]byte(\"...\")\n", k)
+
+	}
 	return m, nil
 }
 
