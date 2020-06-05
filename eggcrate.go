@@ -6,8 +6,8 @@ import (
 	"encoding/gob"
 	"errors"
 	"fmt"
-	"github.com/devplayg/golibs/compress"
-	"github.com/devplayg/golibs/converter"
+	"github.com/devplayg/goutils"
+
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -44,7 +44,7 @@ func encode(dir, extensions, uriPrefix string, compress bool, outFile string) (i
 		return 0, err
 	}
 
-	encoded, err := converter.EncodeToBytes(fileMap)
+	encoded, err := goutils.GobEncode(fileMap)
 	if err != nil {
 		return 0, err
 	}
@@ -83,7 +83,7 @@ func generateFileMap(files []string, dir, uriPrefix string, doCompress bool) (ma
 		totalOrigin += int64(len(data))
 
 		if doCompress {
-			compressed, err := compress.Compress(data, compress.GZIP)
+			compressed, err := goutils.Gzip(data)
 			if err != nil {
 				return nil, err
 			}

@@ -2,7 +2,7 @@ package eggcrate
 
 import (
     "bytes"
-    "github.com/devplayg/golibs/compress"
+    "github.com/devplayg/goutils"
     "io/ioutil"
     "os"
     "path/filepath"
@@ -86,7 +86,7 @@ func TestEncodeContentToBase64(t *testing.T) {
         t.Error("key does not exists; " + key)
     }
 
-    expected, err := compress.Compress([]byte(cssText), compress.GZIP)
+    expected, err := goutils.Gzip([]byte(cssText))
     if err != nil {
         t.Error("compress error")
     }
